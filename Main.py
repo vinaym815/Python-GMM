@@ -1,22 +1,33 @@
+#!/usr/bin/python3
+
 from matplotlib import pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from scipy import stats
 
-# stats.multivariate gaussian covariance can not be
-# reassigned
+# covariance can not be reassigned for stats.multivariate object
+
 
 class GaussianMixture:
     def __init__(self, data, n_gaus):
         self.data = data
-        self.n_gauss = n_gaus                                          # Nu of gaussians to be fitted
-        self.mix = np.repeat(1/n_gaus, n_gaus)                           # Linear coffiecients of gaussians
-        self.N, self.D = data.shape                                     # Number and dimensions of samples
-        self.gaussian = []                                              # List of gaussians
-        self.resp = np.zeros((self.N, self.n_gauss))                    # Responsibilties of each gaussian
 
-        # making sure that the gaussians are initialized with different means
+        # Nu of gaussians to be fitted
+        self.n_gauss = n_gaus
 
+        # Coffiecients of gaussians
+        self.mix = np.repeat(1/n_gaus, n_gaus)
+
+        # Number and dimensions of samples
+        self.N, self.D = data.shape
+
+        # List of gaussians
+        self.gaussian = []
+
+        # Responsibilties of each gaussian
+        self.resp = np.zeros((self.N, self.n_gauss))
+
+        # Initializing gaussians with different mean values 
         while True:
             start = np.random.randint(self.N, size=self.n_gauss)
             start = np.unique(start)
@@ -31,16 +42,21 @@ class GaussianMixture:
         print('Started with')
         print('pi values : {}'.format(self.mix))
 
+    # Expectation function
     def eStep(self):
+        # Finding out responsibilities for each gaussian
         for i in range(self.n_gauss):
             self.resp[:, i] = self.mix[i]*self.gaussian[i].pdf(self.data)
 
+        # Normalizing responsibilities
         div = np.sum(self.resp, axis=1)
         self.resp = np.divide(self.resp, div[:, None])
         where_are_NaNs = np.isnan(self.resp)
         self.resp[where_are_NaNs] = 1/self.n_gauss
 
+    # Maximization function
     def mStep(self):
+        # Re-estimating gaussian parameters based on current responsibilities
         for i in range(self.n_gauss):
             Nk = np.sum(self.resp[:, i])
             mu = 1/Nk*np.dot(self.resp[:, i], self.data)
@@ -50,10 +66,12 @@ class GaussianMixture:
             self.gaussian[i] = stats.multivariate_normal(mean=mu, cov=cov)
             self.mix[i] = Nk/self.N
 
+    # Iteration function
     def iteration(self):
         self.eStep()
         self.mStep()
 
+    # Combined probability
     def pdf(self, num):
         res = 0
         for i in range(self.n_gauss):
@@ -63,17 +81,24 @@ class GaussianMixture:
     def result(self):
         print('Finished With')
         print('pi values : {}'.format(self.mix))
-#        print(self.gaussian[0].mean,self.gaussian[1].mean)
-#        print(self.gaussian[0].cov,self.gaussian[1].cov)
 
 
-Data = np.loadtxt('faithful1.txt')
+# Loading old faithful geyser dataset for fitting GMM 
+# http://www.stat.cmu.edu/~larry/all-of-statistics/=data/faithful.dat
+Data = np.loadtxt('faithful.txt')
 
+# Intializing GMM and asking to fit two gaussians
 a = GaussianMixture(Data, 2)
+
+# Performing EM iterations 
 for vin in range(25):
     a.iteration()
 
 a.result()
+
+# Plotting the result for this specific simulation
+# The plots will not work for data with dimensions
+# other than two
 
 N = 100
 X = np.linspace(1, 5.5, N)
@@ -90,4 +115,7 @@ fig = plt.figure()
 ax = fig.gca(projection='3d')
 surf = ax.plot_wireframe(X, Y, Z, rstride=5, cstride=5)
 plt.plot(Data[:, 0], Data[:, 1], 'go')
+plt.xlabel('Eruption time')
+plt.ylabel('Waiting time')
+
 plt.show()
