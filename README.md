@@ -1,6 +1,6 @@
 # Python-GMM
 
-This code can be utilized N gaussians to D dimensional data. It 
+This code can be utilized to fit N gaussians to D dimensional data. It 
 was inspired by video of GMM by siraj available
 on https://www.youtube.com/watch?v=JNlEIEwe-Cg&t=603s
 
